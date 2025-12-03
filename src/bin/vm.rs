@@ -3,6 +3,11 @@ use std::{env, fs::File, io::{BufReader, Read}, path::Path};
 
 use rustmachine::{Machine, Register};
 
+fn signal_halt(vm: &mut Machine) -> Result<(), String> {
+    vm.halt = true;
+    Ok(())
+}
+
 pub fn main() -> Result<(), String> {
 
     let args: Vec<_> = env::args().collect();
@@ -16,8 +21,11 @@ pub fn main() -> Result<(), String> {
     let _ = reader.read_to_end(&mut prog);
 
     let mut vm = Machine::new(5);
+
+    vm.define_handler(0x90, signal_halt);
+
     let sc = vm.memory.from_vector(prog, 0).unwrap();
-    for _ in 0..sc {
+    while !vm.halt {
         vm.step()?;
     }
     println!("A = {}", vm.get_reg(Register::A));
